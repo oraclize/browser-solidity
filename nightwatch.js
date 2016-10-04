@@ -72,7 +72,7 @@ module.exports = {
 
     'local': {
       'launch_url': 'http://localhost:8080',
-      'selenium_port': 4444,
+      'selenium_port': 4445,
       'selenium_host': 'localhost',
       'desiredCapabilities': {
         'browserName': 'firefox',

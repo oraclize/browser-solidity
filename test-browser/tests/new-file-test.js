@@ -6,7 +6,7 @@ module.exports = {
       .url('http://127.0.0.1:8080/#version=builtin')
       .waitForElementVisible('.newFile', 10000)
       .click('.newFile')
-      .pause('10000')
+      .pause(500)
       .assert.containsText('.active', 'Untitled')
       .end()
   }
