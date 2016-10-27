@@ -64,5 +64,8 @@
       "src/mode-solidity.js",
       "soljson.js"
     ]
+  },
+  "dependencies": {
+    "bs58": "^3.0.0"
   }
 }

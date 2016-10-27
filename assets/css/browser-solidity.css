@@ -237,6 +237,33 @@ body {
     border-radius: 3px;
 }
 
+#header #optionViews.oraclizeView #oraclizeView { display: block; }
+
+#oraclizeView button {
+    background-color:#C6CFF7;
+    font-size:12px;
+    padding:0.25em;
+    margin-bottom:.5em;
+    color:black;
+    border:0 none;
+    border-radius:3px;
+    width:10em;
+    margin-right:1em;
+    cursor:pointer;
+}
+
+.queryHistory {
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.datasource {
+    padding: 4px;
+    background-color: #333;
+    color: #FFF;
+    border-radius: 2px;
+}
+
 #header #optionViews .pre {
     word-wrap: break-word;
     background-color: #C6CFF7;

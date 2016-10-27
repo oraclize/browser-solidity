@@ -49,6 +49,7 @@ UniversalDApp.prototype.reset = function (contracts, getAddress, getValue, getGa
     this._addAccount('dae9801649ba2d95a21e688b56f77905e5667c44ce868ec83f82e838712a2c7a')
     this._addAccount('d74aa6d18aa79a05f3473dd030a97d3305737cbc8337d940344345c1f6b72eea')
     this._addAccount('71975fbf7fe448e004ac7ae54cad0a383c3906055a65468714156a07385e96ce')
+    this._addAccount('4e6c5ac4758264562397fd4f92065e7fcca7078189bdb7e510e04968298f5062') // Oraclize 'simulator' account
     this.blockNumber = 1150000 // The VM is running in Homestead mode, which started at this block.
   }
 }
@@ -740,7 +741,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
   } else {
     try {
       var address = self.getAddress ? self.getAddress() : Object.keys(self.accounts)[0]
-      var account = self.accounts[address]
+      var account = args.from ? self.accounts[args.from] : self.accounts[address]
       tx = new EthJSTX({
         nonce: new BN(account.nonce++),
         gasPrice: new BN(1),
