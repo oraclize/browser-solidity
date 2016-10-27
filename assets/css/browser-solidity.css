@@ -252,6 +252,35 @@ body {
     cursor:pointer;
 }
 
+#queryNotification {
+    position: absolute;
+    margin-left: 20px;
+    margin-top: -10px;
+    font-size: 0.8em;
+    width: 20px;
+    text-align: center;
+    border-radius: 40px;
+    background-color: #92bb17;
+    color: #FFF;
+}
+
+.blackAndWhite {
+    -webkit-filter: grayscale(100%);
+    filter: grayscale(100%);
+}
+
+.green {
+    color: #ACDE17;
+}
+
+.orange {
+    color: #F7A814;
+}
+
+#oraclizeImg {
+    vertical-align: text-top;
+}
+
 .queryHistory {
     margin-bottom: 8px;
     font-weight: 700;

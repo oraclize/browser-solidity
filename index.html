@@ -58,6 +58,9 @@
 						<li class="settingsView active" title="Settings"><i class="fa fa-gear"></i></li>
 						<li class="txView" title="Transaction"><i class="fa fa-send"></i></li>
 						<li class="envView" title="Environment"><i class="fa fa-cube"></i></li>
+						<li class="oraclizeView" title="Oraclize">
+							<span id="queryNotification" style="display:none;">0</span>
+							<img src="https://i.imgur.com/YKmJ5wG.png" alt="Oraclize" title="Oraclize" width="17px" id="oraclizeImg" class="blackAndWhite"></li>
 						<li class="publishView" title="Publish" ><i class="fa fa-cloud-upload"></i></li>
 						<li class="debugView" title="Debugger"><i class="fa fa-bug"></i></li>
 						<li class="verificationView" title="Formal Verification"><i class="fa fa-check"></i></li>
@@ -119,6 +122,20 @@
 								</label>
 							</label>
 						</span>
+					</div>
+					<div id="oraclizeView">
+						<span style="font-weight:700;font-size:1.08em;">Oraclize plugin (for in-memory use only)</span>
+						<hr style="margin:3px 0 3px;">
+						<p>Oraclize status: 
+							<span id="oraclizeStatus"><span class="orange">LOADING</span></span>
+						</p>
+						<p align="center">Please make sure your contract constructor includes the following (when testing in-memory):
+							<br>
+							<input type="text" style="font-size:0.93em;text-align:center;" id="oarLine" onclick="this.select();" readonly="readonly" value=""/>
+							<hr style="margin:3px 0 3px;">
+							<p class="queryHistory">Query history:</p>
+							<div id="queryHistoryContainer">No query was sent yet, please refer to the <a href="https://docs.oraclize.it" target="_blank">Oraclize documentation</a> or run some <a href="#" target="_blank">example contracts</a> to get started.</div>
+						</p>
 					</div>
 					<div id="debugView">
 						<div id="debugger" ></div>

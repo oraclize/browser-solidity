@@ -95,10 +95,6 @@ var run = function () {
   var editor = new Editor(loadingFromGist, storage)
 
   // ----------------- tabbed menu -------------------
-  var oraclizeTab = '<li class="oraclizeView" title="Oraclize"><img src="https://i.imgur.com/OccFCej.png" alt="Oraclize" title="Oraclize" width="17px" style="vertical-align: text-top;"></li>'
-  $('#options > li:nth-child(1)').after(oraclizeTab)
-  $('#optionViews').append('<div id="oraclizeView"><span style="font-weight:700;font-size:1.08em;">Oraclize VM plugin</span><hr style="margin:3px 0 3px;"><!--<p><button id="genOraclize" title="Generate Oraclize connector and address resolver">Generate Oraclize</button></p>--><p>OAR: <span id="oarAddr"></span><br>Connector: <span id="connAddr"></span></p><p align="center">Please add this line in your contract constructor:<br><input type="text" style="font-size:0.93em;text-align:center;" id="oarLine" onclick="this.select();" readonly="readonly" value=""/><hr style="margin:3px 0 3px;"><p class="queryHistory">Query history:</p><div id="queryHistoryContainer"></div></p></div>')
-  
   $('#options li').click(function (ev) {
     var $el = $(this)
     selectTab($el)
@@ -642,8 +638,8 @@ function generateOraclize(vmInstance,account){
           var setAddr = "0xd1d80fdf000000000000000000000000"+(oraclizeConn.replace('0x',''))
           vmInstance.runTx({"from":account,"to":oar,"data":setAddr,"gas":3000000}, function (err, result) {
             if(err) console.log(err);
-            $('#oarAddr').html(oar)
-            $('#connAddr').html(oraclizeConn)
+            $('#oraclizeStatus').html('<span class="green">READY</span>')
+            $('#oraclizeImg').removeClass("blackAndWhite")
             $('#oarLine').val('OAR = OraclizeAddrResolverI('+oar+');')
             runLog(vmInstance,oraclizeConn)
           })
@@ -670,6 +666,7 @@ function generateOraclize(vmInstance,account){
               decoded = ethJSABI.stringify(types, decoded)
               decoded = {"sender":decoded[0],"cid":decoded[1],"timestamp":decoded[2],"datasource":decoded[3],"arg1":decoded[4],"arg2":decoded[5],"gaslimit":decoded[6],"proofType":decoded[7],"gasPrice":decoded[8]}
             }
+            if(!$('#queryHistoryContainer').find('.datasource').length) $('#queryHistoryContainer').html('');
             console.log(decoded)
             var myid = decoded['cid']
             var myIdInitial = myid
@@ -702,6 +699,7 @@ function generateOraclize(vmInstance,account){
               myid = data.result.id
               console.log("New query created, id: "+myid)
               console.log("Checking query status every 5 seconds..")
+              updateQueryNotification(1);
               var interval = setInterval(function(){
                 // check query status
                 checkQueryStatus(myid, function(data){ 
@@ -754,6 +752,21 @@ function generateOraclize(vmInstance,account){
         console.log('result: '+result)
         console.log('Contract '+contractAddr+ ' __callback called')
     }
+
+    function updateQueryNotification(count){
+      var activeTab = $('#optionViews').attr('class')
+      if(activeTab!='oraclizeView'){
+        $('#queryNotification').show()
+        $('#queryNotification').html(count+parseInt($('#queryNotification').text()))
+      }
+    }
+
+    $('.oraclizeView').on('click', function(e){
+      e.preventDefault()
+      $('#queryNotification').hide()
+      $('#queryNotification').html('0')
+    })
+
   }
 }
 
