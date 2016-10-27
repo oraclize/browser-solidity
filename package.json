@@ -63,5 +63,8 @@
       "src/mode-solidity.js",
       "soljson.js"
     ]
+  },
+  "dependencies": {
+    "async": "^2.1.2"
   }
 }
