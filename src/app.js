@@ -679,7 +679,10 @@ function generateOraclize(vmInstance,account){
               var formula = [decoded['arg1'],arg2formula]
             }
             queryTime = Date.now()
-            var queryHtml = "<div id='query_"+queryTime+"'><span><span class='datasource'>"+ds+"</span> "+formula+"</span><br></div>"
+            var dateQuery = new Date()
+            dateQuery = dateQuery.getHours()+":"+dateQuery.getMinutes()+":"+dateQuery.getSeconds()
+            var queryInfoTitle = "Time: "+dateQuery+"\n"+"myid: "+myIdInitial
+            var queryHtml = "<div id='query_"+queryTime+"' title='"+queryInfoTitle+"' style='margin-bottom:4px;'><span><span class='datasource'>"+ds+"</span> "+formula+"</span><br></div>"
             $('#queryHistoryContainer').append(queryHtml)
 
             var time = parseInt(decoded['timestamp'])
@@ -730,7 +733,7 @@ function generateOraclize(vmInstance,account){
         vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
-            result = '<span style="color:#F00">'+error+'</span>'
+            result = '<span style="color:#F00;">'+error+'</span>'
             console.log(error)
           }
           $('#query_'+queryTime).append('<span class="queryResult">=</span> '+result)
@@ -741,11 +744,11 @@ function generateOraclize(vmInstance,account){
         vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
-             result = '<span style="color:#F00">'+error+'</span>'
+             result = '<span style="color:#F00;">'+error+'</span>'
              console.log(error)
           }
           $('#query_'+queryTime).append('<span class="queryResult">=</span> '+result+'<br>Proof:'+proof)
-          })
+        })
           console.log('proof: '+proof)
         }
         updateQueryNotification(1);
