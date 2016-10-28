@@ -679,7 +679,7 @@ function generateOraclize(vmInstance,account){
               var formula = [decoded['arg1'],arg2formula]
             }
             queryTime = Date.now()
-            var queryHtml = "<div id='query_"+queryTime+"'><span><span class='datasource'>"+ds+"</span> "+formula+"</span><br><div>"
+            var queryHtml = "<div id='query_"+queryTime+"'><span><span class='datasource'>"+ds+"</span> "+formula+"</span><br></div>"
             $('#queryHistoryContainer').append(queryHtml)
 
             var time = parseInt(decoded['timestamp'])
@@ -730,10 +730,10 @@ function generateOraclize(vmInstance,account){
         vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
-            result = error
+            result = '<span style="color:#F00">'+error+'</span>'
             console.log(error)
           }
-          $('#query_'+queryTime).append('= '+result)
+          $('#query_'+queryTime).append('<span class="queryResult">=</span> '+result)
         })
       } else {
         var inputProof = (proof.length==46) ? bs58.decode(proof) : proof
@@ -741,13 +741,14 @@ function generateOraclize(vmInstance,account){
         vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
-             result = error
+             result = '<span style="color:#F00">'+error+'</span>'
              console.log(error)
-           }
-            $('#query_'+queryTime).append('= '+result+'<br>Proof:'+proof)
+          }
+          $('#query_'+queryTime).append('<span class="queryResult">=</span> '+result+'<br>Proof:'+proof)
           })
           console.log('proof: '+proof)
         }
+        updateQueryNotification(1);
         console.log('myid: '+myid)
         console.log('result: '+result)
         console.log('Contract '+contractAddr+ ' __callback called')
@@ -765,6 +766,11 @@ function generateOraclize(vmInstance,account){
       e.preventDefault()
       $('#queryNotification').hide()
       $('#queryNotification').html('0')
+    })
+
+    $('.clearQueries').on('click', function(e){
+      e.preventDefault()
+      $('#queryHistoryContainer').html('')
     })
 
   }

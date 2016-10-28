@@ -254,14 +254,18 @@ body {
 
 #queryNotification {
     position: absolute;
-    margin-left: 20px;
+    margin-left: 10px;
     margin-top: -10px;
-    font-size: 0.8em;
-    width: 20px;
+    font-size: 0.7em;
+    width: 18px;
     text-align: center;
-    border-radius: 40px;
-    background-color: #92bb17;
+    border-radius: 10px;
+    background-color: #29b6f6;
     color: #FFF;
+}
+
+#queryHistoryContainer {
+    max-height: 200px;
 }
 
 .blackAndWhite {
@@ -270,7 +274,7 @@ body {
 }
 
 .green {
-    color: #ACDE17;
+    color: #87AD16;
 }
 
 .orange {
@@ -287,10 +291,24 @@ body {
 }
 
 .datasource {
-    padding: 4px;
+    padding: 2px;
     background-color: #333;
     color: #FFF;
     border-radius: 2px;
+}
+
+.queryResult {
+    padding: 0 4px 0 4px;
+    border-radius: 2px;
+    background-color: #DCDCDC;
+    color: #666;
+}
+
+.clearQueries {
+    position: relative;
+    color: #666;
+    cursor: pointer;
+    float: right;
 }
 
 #header #optionViews .pre {
