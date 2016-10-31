@@ -747,7 +747,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
         gasPrice: new BN(1),
         gasLimit: new BN(gasLimit, 10),
         to: to,
-        value: new BN(value, 10),
+        value: new BN(value,10),
         data: new Buffer(data.slice(2), 'hex')
       })
       tx.sign(account.privateKey)
