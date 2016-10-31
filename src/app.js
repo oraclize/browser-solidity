@@ -484,6 +484,15 @@ var run = function () {
   })
 
   executionContext.event.register('contextChanged', this, function (context) {
+    if(context!='vm'){
+      $('#oraclizeView').css("background-color","#FF9393")
+      $('#oraclizeNotAvailable').show()
+      $('#oraclizeVM').hide()
+    } else {
+      $('#oraclizeView').css("background-color","#F4F6FF")
+      $('#oraclizeNotAvailable').hide()
+      $('#oraclizeVM').show()
+    }
     compiler.compile()
   })
 

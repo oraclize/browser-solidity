@@ -124,6 +124,11 @@
 						</span>
 					</div>
 					<div id="oraclizeView">
+					<span id="oraclizeNotAvailable" style="display:none;">
+						<p>This Oraclize plugin is currently NOT working in browser-solidity via web3/injected provider.<br><strong>This is available for the in-memory mode only (JavaScript VM).</strong> If you want to use Oraclize-based contracts, please verify first that Oraclize is integrated with the blockchain you are using - if not you can enable it via a <a href='https://github.com/oraclize/ethereum-bridge' target='_blank'>dedicated ethereum-bridge instance</a>
+						</p>
+					</span>
+					<span id="oraclizeVM">
 						<span style="font-weight:700;font-size:1.08em;">Oraclize plugin (for in-memory use only)</span>
 						<hr style="margin:3px 0 3px;">
 						<p>Oraclize status: 
@@ -139,6 +144,7 @@
 							<p class="queryHistory">Query history:</p>
 							<div id="queryHistoryContainer">No query was sent yet, please refer to the <a href="https://docs.oraclize.it" target="_blank">Oraclize documentation</a> or run some <a href="#" target="_blank">example contracts</a> to get started.</div>
 						</p>
+						<span>
 					</div>
 					<div id="debugView">
 						<div id="debugger" ></div>
