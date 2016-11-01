@@ -488,10 +488,14 @@ var run = function () {
       $('#oraclizeView').css("background-color","#FF9393")
       $('#oraclizeNotAvailable').show()
       $('#oraclizeVM').hide()
+      $('#oraclizeWarning').show()
+      $('#oraclizeImg').addClass("blackAndWhite")
     } else {
+      $('#oraclizeWarning').hide()
       $('#oraclizeView').css("background-color","#F4F6FF")
       $('#oraclizeNotAvailable').hide()
       $('#oraclizeVM').show()
+      generateOraclize(udapp,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
     }
     compiler.compile()
   })
@@ -686,6 +690,9 @@ function generateOraclize(vmInstance,account){
             } else {
               var arg2formula = decoded['arg2']
               var formula = [decoded['arg1'],arg2formula]
+            }
+            if($('#query_'+myIdInitial).length!=0){
+              return
             }
             var dateQuery = new Date()
             dateQuery = dateQuery.getHours()+":"+dateQuery.getMinutes()+":"+dateQuery.getSeconds()
