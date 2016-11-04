@@ -85,27 +85,22 @@ Renderer.prototype.contracts = function (data, source) {
     })
   }
 
-  // rendering function used by udapp. they need data and source
-  var combined = function (contractName, jsonInterface, bytecode) {
-    return JSON.stringify([{ name: contractName, interface: jsonInterface, bytecode: bytecode }])
-  }
-
   var renderOutputModifier = function (contractName, $contractOutput) {
     var contract = data.contracts[contractName]
     if (contract.bytecode) {
-      $contractOutput.append(uiHelper.textRow('Bytecode', contract.bytecode))
+      $contractOutput.append(uiHelper.tableRow('Bytecode', contract.bytecode))
     }
 
-    $contractOutput.append(uiHelper.textRow('Interface', contract['interface']))
+    $contractOutput.append(uiHelper.tableRow('Interface', contract['interface']))
 
     if (contract.bytecode) {
-      $contractOutput.append(uiHelper.textRow('Web3 deploy', uiHelper.gethDeploy(contractName.toLowerCase(), contract['interface'], contract.bytecode), 'deploy'))
-      $contractOutput.append(uiHelper.textRow('uDApp', combined(contractName, contract['interface'], contract.bytecode), 'deploy'))
+      $contractOutput.append(uiHelper.preRow('Web3 deploy', uiHelper.gethDeploy(contractName.toLowerCase(), contract['interface'], contract.bytecode), 'deploy'))
     }
+
     var ctrSource = getSource(contractName, source, data)
     return $contractOutput.append(uiHelper.getDetails(contract, ctrSource, contractName))
   }
-  // //
+
   var self = this
 
   var getSource = function (contractName, source, data) {
@@ -113,14 +108,22 @@ Renderer.prototype.contracts = function (data, source) {
     return source.sources[currentFile]
   }
 
-  var getAddress = function () { return $('#txorigin').val() }
-
-  var getValue = function () {
-    var comp = $('#value').val().split(' ')
-    return self.executionContext.web3().toWei(comp[0], comp.slice(1).join(' '))
+  var getAddress = function (cb) {
+    cb(null, $('#txorigin').val())
   }
 
-  var getGasLimit = function () { return $('#gasLimit').val() }
+  var getValue = function (cb) {
+    try {
+      var comp = $('#value').val().split(' ')
+      cb(null, self.executionContext.web3().toWei(comp[0], comp.slice(1).join(' ')))
+    } catch (e) {
+      cb(e)
+    }
+  }
+
+  var getGasLimit = function (cb) {
+    cb(null, $('#gasLimit').val())
+  }
 
   this.udapp.reset(udappContracts, getAddress, getValue, getGasLimit, renderOutputModifier)
 
