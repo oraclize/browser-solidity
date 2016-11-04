@@ -763,8 +763,6 @@ function generateOraclize(vmInstance,account){
     function oraclizeCallback(vmInstance, mainAccount, gasLimit, myid, result, proof, contractAddr){
       if(proof==null){
         var callbackData = ethJSABI.rawEncode(["bytes32","string"],[myid,result]).toString('hex')
-        var previousValue = $('#value').val()
-        $('#value').val(0)
         vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
@@ -786,7 +784,6 @@ function generateOraclize(vmInstance,account){
         })
           console.log('proof: '+proof)
       }
-      $('#value').val(previousValue)
       updateQueryNotification(1)
       console.log('myid: '+myid)
       console.log('result: '+result)
