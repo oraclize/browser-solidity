@@ -652,22 +652,22 @@ function generateOraclize(vmInstance,account){
   var oraclizeAddressResolver = '0x606060405260018054600160a060020a0319163317905560f3806100236000396000f3606060405260e060020a600035046338cc483181146038578063767800de146062578063a6f9dae1146073578063d1d80fdf146091575b005b600054600160a060020a03165b60408051600160a060020a03929092168252519081900360200190f35b6045600054600160a060020a031681565b603660043560015433600160a060020a0390811691161460af576002565b603660043560015433600160a060020a0390811691161460d1576002565b6001805473ffffffffffffffffffffffffffffffffffffffff19168217905550565b6000805473ffffffffffffffffffffffffffffffffffffffff1916821790555056'
 
   if(vmInstance.executionContext.isVM()){
-    vmInstance.runTx({"from":account,"data":oraclizeConnector,"gas":3000000}, function (err, result) {
+    vmInstance.rawRunTx({"from":account,"data":oraclizeConnector,"gasLimit":3000000}, function (err, result) {
       if(err) console.log(err);
       var contractAddr = new Buffer(result.createdAddress).toString('hex')
       oraclizeConn = "0x"+contractAddr
       console.log("Generated connector: "+oraclizeConn)
       var setCbAddress = "0x9bb51487000000000000000000000000"+account.replace('0x','')
-      vmInstance.runTx({"from":account,"to":oraclizeConn,"data":setCbAddress,"gas":3000000}, function (err, result) {
+      vmInstance.rawRunTx({"from":account,"to":oraclizeConn,"data":setCbAddress,"gasLimit":3000000}, function (err, result) {
         if(err) console.log(err);
         // OAR generate
-        vmInstance.runTx({"from":account,"data":oraclizeAddressResolver,"gas":3000000}, function (err, result) {
+        vmInstance.rawRunTx({"from":account,"data":oraclizeAddressResolver,"gasLimit":3000000}, function (err, result) {
           if(err) console.log(err);
           var resultAddr = new Buffer(result.createdAddress).toString('hex')
           oar = "0x"+resultAddr
           console.log("Generated oar: "+oar)
           var setAddr = "0xd1d80fdf000000000000000000000000"+(oraclizeConn.replace('0x',''))
-          vmInstance.runTx({"from":account,"to":oar,"data":setAddr,"gas":3000000}, function (err, result) {
+          vmInstance.rawRunTx({"from":account,"to":oar,"data":setAddr,"gasLimit":3000000}, function (err, result) {
             if(err) console.log(err);
             $('#oraclizeStatus').html('<span class="green">READY</span>')
             $('#oraclizeImg').removeClass("blackAndWhite")
@@ -763,7 +763,7 @@ function generateOraclize(vmInstance,account){
     function oraclizeCallback(vmInstance, mainAccount, gasLimit, myid, result, proof, contractAddr){
       if(proof==null){
         var callbackData = ethJSABI.rawEncode(["bytes32","string"],[myid,result]).toString('hex')
-        vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
+        vmInstance.rawRunTx({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
             result = '<span style="color:#F00;">'+error+'</span>'
@@ -774,7 +774,7 @@ function generateOraclize(vmInstance,account){
       } else {
         var inputProof = (proof.length==46) ? bs58.decode(proof) : proof
         var callbackData = ethJSABI.rawEncode(["bytes32","string","bytes"],[myid,result,inputProof]).toString('hex')
-        vmInstance.runTx({"from":mainAccount,"to":contractAddr,"gas":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
+        vmInstance.rawRunTx({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
              result = '<span style="color:#F00;">'+error+'</span>'
