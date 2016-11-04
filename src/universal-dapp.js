@@ -741,7 +741,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
   } else {
     try {
       var address = self.getAddress ? self.getAddress() : Object.keys(self.accounts)[0]
-      var account = args.from ? self.accounts[args.from] : self.accounts[address]
+      var account = self.accounts[address]
       tx = new EthJSTX({
         nonce: new BN(account.nonce++),
         gasPrice: new BN(1),
