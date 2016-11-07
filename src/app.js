@@ -635,12 +635,26 @@ var run = function () {
 
   storage.sync()
 
-  setTimeout(function(){
+  setTimeout(function() {
     generateOraclize(udapp,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
-  },8000)
+  }, 8000)
+
 }
 
 function generateOraclize(vmInstance,account){
+    if(!vmInstance.executionContext.isVM()){
+      $('#oraclizeView').css("background-color","#FF9393")
+      $('#oraclizeNotAvailable').show()
+      $('#oraclizeVM').hide()
+      $('#oraclizeWarning').show()
+      $('#oraclizeImg').addClass("blackAndWhite")
+      return;
+    } else {
+      $('#oraclizeWarning').hide()
+      $('#oraclizeView').css("background-color","#F4F6FF")
+      $('#oraclizeNotAvailable').hide()
+      $('#oraclizeVM').show()
+    }
   // remove oraclize account from the transaction tab
   $('#txorigin option[value="'+account+'"]').remove()
 
