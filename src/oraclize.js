@@ -159,7 +159,7 @@ var generateOraclize = function (vmInstance,account) {
              result = '<span style="color:#F00;">'+error+'</span>'
              console.log(error)
           }
-          $('#query_'+myid).append('<span class="queryResult">=</span> '+result+'<br>Proof:'+proof)
+          $('#query_'+myid).append('<span class="queryResult">=</span> '+result+'<br><span style="color:#666;">Proof:</span> '+proof)
         })
           console.log('proof: '+proof)
       }
