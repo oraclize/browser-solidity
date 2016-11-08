@@ -508,7 +508,7 @@ var run = function () {
       $('#oraclizeView').css("background-color","#F4F6FF")
       $('#oraclizeNotAvailable').hide()
       $('#oraclizeVM').show()
-      generateOraclize(udapp,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
+      oraclize.generateOraclize(udapp,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
     }
     compiler.compile()
   })
