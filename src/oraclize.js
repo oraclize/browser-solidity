@@ -192,7 +192,7 @@ var generateOraclize = function (vmInstance,account) {
 }
 
 function createQuery(query, callback){
-  request.post('https://api.oraclize.it/v1/query/create', {body: JSON.stringify(query), headers: { 'User-Agent': 'browser-solidity'}}, function (error, response, body) {
+  request.post('https://api.oraclize.it/v1/query/create', {body: JSON.stringify(query)}, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       callback(body)
     }
@@ -200,7 +200,7 @@ function createQuery(query, callback){
 }
 
 function checkQueryStatus(query_id, callback){
-  request.get('https://api.oraclize.it/v1/query/'+query_id+'/status', { headers: { 'User-Agent': 'browser-solidity'}}, function (error, response, body) {
+  request.get('https://api.oraclize.it/v1/query/'+query_id+'/status', function (error, response, body) {
     if (!error && response.statusCode == 200) {
       callback(body)
     }
