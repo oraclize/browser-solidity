@@ -543,20 +543,21 @@ UniversalDApp.prototype.getCallButton = function (args) {
     }
 
     var decoded
-    self.runTx({ to: args.address, data: data, useCall: args.abi.constant && !isConstructor }, function (err, result) {
+    self.runTx({ to: args.address, data: data, useCall: args.abi.constant && !isConstructor }, function (err, txResult) {
+      var result = txResult.result
       if (err) {
         replaceOutput($result, $('<span/>').text(err).addClass('error'))
       // VM only
       } else if (self.executionContext.isVM() && result.vm.exception === 0 && result.vm.exceptionError) {
         replaceOutput($result, $('<span/>').text('VM Exception: ' + result.vm.exceptionError).addClass('error'))
-        $result.append(getDebugTransaction(result))
+        $result.append(getDebugTransaction(txResult))
       // VM only
       } else if (self.executionContext.isVM() && result.vm.return === undefined) {
         replaceOutput($result, $('<span/>').text('Exception during execution.').addClass('error'))
-        $result.append(getDebugTransaction(result))
+        $result.append(getDebugTransaction(txResult))
       } else if (isConstructor) {
         replaceOutput($result, getGasUsedOutput(result, result.vm))
-        $result.append(getDebugTransaction(result))
+        $result.append(getDebugTransaction(txResult))
         args.appendFunctions(self.executionContext.isVM() ? result.createdAddress : result.contractAddress)
       } else if (self.executionContext.isVM()) {
         var outputObj = '0x' + result.vm.return.toString('hex')
@@ -568,9 +569,9 @@ UniversalDApp.prototype.getCallButton = function (args) {
           $result.append(decoded)
         }
         if (args.abi.constant) {
-          $result.append(getDebugCall(result))
+          $result.append(getDebugCall(txResult))
         } else {
-          $result.append(getDebugTransaction(result))
+          $result.append(getDebugTransaction(txResult))
         }
       } else if (args.abi.constant && !isConstructor) {
         clearOutput($result)
@@ -583,7 +584,7 @@ UniversalDApp.prototype.getCallButton = function (args) {
       } else {
         clearOutput($result)
         $result.append(getReturnOutput(result)).append(getGasUsedOutput(result))
-        $result.append(getDebugTransaction(result))
+        $result.append(getDebugTransaction(txResult))
       }
     })
   }
@@ -674,7 +675,9 @@ function tryTillResponse (web3, txhash, done) {
       // Try again with a bit of delay
       setTimeout(function () { tryTillResponse(web3, txhash, done) }, 500)
     } else {
-      done(err, address)
+      done(err, {
+        result: address
+      })
     }
   })
 }
@@ -828,8 +831,11 @@ UniversalDApp.prototype.rawRunTx = function (args, cb) {
         ++self.blockNumber
       }
       self.vm.runTx({block: block, tx: tx, skipBalance: true, skipNonce: true}, function (err, result) {
-        result.transactionHash = self.txdebugger.web3().releaseCurrentHash() // used to keep track of the transaction
-        cb(err, result)
+        var transactionHash = self.txdebugger.web3().releaseCurrentHash() // used to keep track of the transaction
+        cb(err, {
+          result: result,
+          transactionHash: transactionHash
+        })
       })
     } catch (e) {
       cb(e, null)
