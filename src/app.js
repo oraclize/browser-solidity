@@ -501,19 +501,6 @@ var run = function () {
   })
 
   executionContext.event.register('contextChanged', this, function (context) {
-    if(context!='vm'){
-      $('#oraclizeView').css("background-color","#FF9393")
-      $('#oraclizeNotAvailable').show()
-      $('#oraclizeVM').hide()
-      $('#oraclizeWarning').show()
-      $('#oraclizeImg').addClass("blackAndWhite")
-    } else {
-      $('#oraclizeWarning').hide()
-      $('#oraclizeView').css("background-color","#F4F6FF")
-      $('#oraclizeNotAvailable').hide()
-      $('#oraclizeVM').show()
-      oraclize.generateOraclize(udapp,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
-    }
     compiler.compile()
   })
 

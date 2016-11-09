@@ -4,6 +4,21 @@ var request = require('request')
 var bs58 = require('bs58')
 
 var generateOraclize = function (vmInstance,account) {
+  vmInstance.executionContext.event.register('contextChanged', this, function (context) {
+    if(context!='vm'){
+      $('#oraclizeView').css("background-color","#FF9393")
+      $('#oraclizeNotAvailable').show()
+      $('#oraclizeVM').hide()
+      $('#oraclizeWarning').show()
+      $('#oraclizeImg').addClass("blackAndWhite")
+    } else {
+      $('#oraclizeWarning').hide()
+      $('#oraclizeView').css("background-color","#F4F6FF")
+      $('#oraclizeNotAvailable').hide()
+      $('#oraclizeVM').show()
+      generateOraclize(vmInstance,"0x265a5c3dd46ec82e2744f1d0e9fb4ed75d56132a")
+    }
+  })
   if(!vmInstance.executionContext.isVM()){
     $('#oraclizeView').css("background-color","#FF9393")
     $('#oraclizeNotAvailable').show()
@@ -33,6 +48,7 @@ var generateOraclize = function (vmInstance,account) {
   if(vmInstance.executionContext.isVM()){
     vmInstance.rawRunTx({"from":account,"data":oraclizeConnector,"gasLimit":3000000}, function (err, result) {
       if(err) console.log(err);
+      result = result.result
       var contractAddr = new Buffer(result.createdAddress).toString('hex')
       oraclizeConn = "0x"+contractAddr
       console.log("Generated connector: "+oraclizeConn)
@@ -42,6 +58,7 @@ var generateOraclize = function (vmInstance,account) {
         // OAR generate
         vmInstance.rawRunTx({"from":account,"data":oraclizeAddressResolver,"gasLimit":3000000}, function (err, result) {
           if(err) console.log(err);
+          result = result.result
           var resultAddr = new Buffer(result.createdAddress).toString('hex')
           oar = "0x"+resultAddr
           console.log("Generated oar: "+oar)
@@ -143,6 +160,7 @@ var generateOraclize = function (vmInstance,account) {
       if(proof==null){
         var callbackData = ethJSABI.rawEncode(["bytes32","string"],[myid,result]).toString('hex')
         vmInstance.rawRunTx({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
+          tx = tx.result
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
             result = '<span style="color:#F00;">'+error+'</span>'
@@ -154,6 +172,7 @@ var generateOraclize = function (vmInstance,account) {
         var inputProof = (proof.length==46) ? bs58.decode(proof) : proof
         var callbackData = ethJSABI.rawEncode(["bytes32","string","bytes"],[myid,result,inputProof]).toString('hex')
         vmInstance.rawRunTx({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
+          tx = tx.result
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
              result = '<span style="color:#F00;">'+error+'</span>'
@@ -192,7 +211,7 @@ var generateOraclize = function (vmInstance,account) {
 }
 
 function createQuery(query, callback){
-  request.post('https://api.oraclize.it/v1/query/create', {body: JSON.stringify(query), headers:{"X-Context":"browser-solidity"} }, function (error, response, body) {
+  request.post('https://api.oraclize.it/v1/query/create', {body: JSON.stringify(query), headers:{"X-User-Agent":"browser-solidity","Content-Type":"application/json"} }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       callback(body)
     }
@@ -200,7 +219,7 @@ function createQuery(query, callback){
 }
 
 function checkQueryStatus(query_id, callback){
-  request.get('https://api.oraclize.it/v1/query/'+query_id+'/status', { headers:{"X-Context":"browser-solidity"} }, function (error, response, body) {
+  request.get('https://api.oraclize.it/v1/query/'+query_id+'/status', { headers:{"X-User-Agent":"browser-solidity","Content-Type":"application/json"} }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       callback(body)
     }
