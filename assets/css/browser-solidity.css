@@ -325,6 +325,10 @@ body {
     float: right;
 }
 
+#oraclizeAdditionalWarning {
+    background-color: #FF9393;
+}
+
 #header #optionViews .pre {
     word-wrap: break-word;
     background-color: #C6CFF7;

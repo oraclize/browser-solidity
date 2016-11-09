@@ -9,6 +9,7 @@ var generateOraclize = function (vmInstance,account) {
       $('#oraclizeView').css("background-color","#FF9393")
       $('#oraclizeNotAvailable').show()
       $('#oraclizeVM').hide()
+      $('#queryNotification').hide()
       $('#oraclizeWarning').show()
       $('#oraclizeImg').addClass("blackAndWhite")
     } else {
@@ -23,6 +24,7 @@ var generateOraclize = function (vmInstance,account) {
     $('#oraclizeView').css("background-color","#FF9393")
     $('#oraclizeNotAvailable').show()
     $('#oraclizeVM').hide()
+    $('#queryNotification').hide()
     $('#oraclizeWarning').show()
     $('#oraclizeImg').addClass("blackAndWhite")
     return;
@@ -190,6 +192,7 @@ var generateOraclize = function (vmInstance,account) {
 
     function updateQueryNotification(count){
       var activeTab = $('#optionViews').attr('class')
+      $('#oraclizeWarning, #oraclizeAdditionalWarning').hide()
       if(activeTab!='oraclizeView'){
         $('#queryNotification').show()
         $('#queryNotification').html(count+parseInt($('#queryNotification').text()))
@@ -212,16 +215,26 @@ var generateOraclize = function (vmInstance,account) {
 
 function createQuery(query, callback){
   request.post('https://api.oraclize.it/v1/query/create', {body: JSON.stringify(query), headers:{"X-User-Agent":"browser-solidity","Content-Type":"application/json"} }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+    if (error) console.log(error)
+    if (response.statusCode == 200) {
       callback(body)
+    } else {
+      $('#oraclizeAdditionalWarning').show()
+      $('#oraclizeWarning').show()
+      $('#queryNotification').hide()
     }
   })
 }
 
 function checkQueryStatus(query_id, callback){
   request.get('https://api.oraclize.it/v1/query/'+query_id+'/status', { headers:{"X-User-Agent":"browser-solidity","Content-Type":"application/json"} }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+    if (error) console.log(error)
+    if (response.statusCode == 200) {
       callback(body)
+    } else {
+      $('#oraclizeAdditionalWarning').show()
+      $('#oraclizeWarning').show()
+      $('#queryNotification').hide()
     }
   })
 }
