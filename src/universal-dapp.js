@@ -670,13 +670,14 @@ UniversalDApp.prototype.clickContractAt = function (self, $output, contract) {
 }
 
 function tryTillResponse (web3, txhash, done) {
-  web3.eth.getTransactionReceipt(txhash, function (err, address) {
-    if (!err && !address) {
+  web3.eth.getTransactionReceipt(txhash, function (err, result) {
+    if (!err && !result) {
       // Try again with a bit of delay
       setTimeout(function () { tryTillResponse(web3, txhash, done) }, 500)
     } else {
       done(err, {
-        result: address
+        result: result,
+        transactionHash: result.transactionHash
       })
     }
   })
@@ -829,9 +830,15 @@ UniversalDApp.prototype.rawRunTx = function (args, cb) {
       })
       if (!args.useCall) {
         ++self.blockNumber
+      } else {
+        self.vm.stateManager.checkpoint()
       }
+
       self.vm.runTx({block: block, tx: tx, skipBalance: true, skipNonce: true}, function (err, result) {
         var transactionHash = self.txdebugger.web3().releaseCurrentHash() // used to keep track of the transaction
+        if (args.useCall) {
+          self.vm.stateManager.revert(function () {})
+        }
         cb(err, {
           result: result,
           transactionHash: transactionHash

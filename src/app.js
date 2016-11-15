@@ -20,6 +20,7 @@ var Debugger = require('./app/debugger')
 var FormalVerification = require('./app/formalVerification')
 var EventManager = require('./lib/eventManager')
 var StaticAnalysis = require('./app/staticanalysis/staticAnalysisView')
+var OffsetToLineColumnConverter = require('./lib/offsetToLineColumnConverter')
 
 var oraclize = require('./oraclize.js')
 
@@ -425,12 +426,13 @@ var run = function () {
         cb(err || 'Unknown transport error')
       })
   }
-
   var executionContext = new ExecutionContext()
   var compiler = new Compiler(editor, handleGithubCall)
   var formalVerification = new FormalVerification($('#verificationView'), compiler.event)
 
-  var transactionDebugger = new Debugger('#debugger', editor, compiler, executionContext.event, swicthToFile)
+  var offsetToLineColumnConverter = new OffsetToLineColumnConverter(compiler.event)
+
+  var transactionDebugger = new Debugger('#debugger', editor, compiler, executionContext.event, swicthToFile, offsetToLineColumnConverter)
   transactionDebugger.addProvider('vm', executionContext.vm())
   transactionDebugger.switchProvider('vm')
   transactionDebugger.addProvider('injected', executionContext.web3())
@@ -445,9 +447,9 @@ var run = function () {
     startdebugging(txResult.transactionHash)
   })
 
-  var renderer = new Renderer(editor, executionContext.web3(), updateFiles, udapp, executionContext, formalVerification.event, compiler.event) // eslint-disable-line
+  var renderer = new Renderer(editor, updateFiles, udapp, executionContext, formalVerification.event, compiler.event) // eslint-disable-line
 
-  var staticanalysis = new StaticAnalysis(compiler, renderer)
+  var staticanalysis = new StaticAnalysis(compiler.event, renderer, editor, offsetToLineColumnConverter)
   $('#staticanalysisView').append(staticanalysis.render())
 
   var autoCompile = document.querySelector('#autoCompile').checked
@@ -558,6 +560,9 @@ var run = function () {
     if (version === 'builtin') {
       var location = window.document.location
       location = location.protocol + '//' + location.host + '/' + location.pathname
+      if (location.endsWith('index.html')) {
+        location = location.substring(0, location.length - 10)
+      }
       if (!location.endsWith('/')) {
         location += '/'
       }
@@ -600,17 +605,9 @@ var run = function () {
   })
 
   $.getJSON('https://ethereum.github.io/solc-bin/bin/list.json').done(function (data) {
-    function buildVersion (build) {
-      if (build.prerelease && build.prerelease.length > 0) {
-        return build.version + '-' + build.prerelease
-      } else {
-        return build.version
-      }
-    }
-
     // populate version dropdown with all available compiler versions (descending order)
     $.each(data.builds.slice().reverse(), function (i, build) {
-      $('#versionSelector').append(new Option(buildVersion(build), build.path))
+      $('#versionSelector').append(new Option(build.longVersion, build.path))
     })
 
     $('#versionSelector').attr('disabled', false)
