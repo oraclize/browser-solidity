@@ -69,7 +69,6 @@ var generateOraclize = function (vmInstance,account) {
             if(err) console.log(err);
             $('#oraclizeStatus').html('<span class="green">READY</span>')
             $('#oraclizeImg').removeClass("blackAndWhite")
-            $('#oarLine').val('OAR = OraclizeAddrResolverI('+oar+');')
             runLog(vmInstance,oraclizeConn)
           })
         })
