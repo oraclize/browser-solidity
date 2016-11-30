@@ -116,7 +116,7 @@ var generateOraclize = function (vmInstance,account) {
             $('#queryHistoryContainer').append(queryHtml)
 
             var time = parseInt(decoded['timestamp'])
-            var gasLimit = decoded['gaslimit']
+            var gasLimit = parseInt(decoded['gaslimit'])
             var proofType = decoded['proofType']
             var query = {
                 when: time,
@@ -147,6 +147,10 @@ var generateOraclize = function (vmInstance,account) {
                   else clearInterval(interval)
                   if(dataProof==null && proofType!='0x00'){
                     dataProof = new Buffer('None')
+                  } else if(typeof dataProof == 'object' && proofType!='0x00'){
+                    if(typeof dataProof.type != 'undefined' && typeof dataProof.value != 'undefined'){
+                      dataProof = new Buffer(dataProof.value)
+                    }
                   }
                   oraclizeCallback(vmInstance, account, gasLimit, myIdInitial, dataRes, dataProof, cAddr)
                 })
