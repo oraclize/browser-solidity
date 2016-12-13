@@ -154,6 +154,7 @@ UniversalDApp.prototype.render = function () {
   var $legend = $('<div class="legend" />')
     .append($('<div class="attach"/>').text('Attach'))
     .append($('<div class="transact"/>').text('Transact'))
+    .append($('<div class="payable"/>').text('Transact (Payable)'))
     .append($('<div class="call"/>').text('Call'))
 
   self.$el.append($legend)
@@ -198,6 +199,10 @@ UniversalDApp.prototype.getCreateInterface = function ($container, contract) {
   $createInterface.append($atButton)
 
   var $newButton = self.getInstanceInterface(contract)
+  if (!$newButton) {
+    return $createInterface
+  }
+
   $createInterface.append($newButton)
 
   // Only display creation interface for non-abstract contracts.
@@ -230,7 +235,12 @@ UniversalDApp.prototype.getInstanceInterface = function (contract, address, $tar
       return 1
     }
   })
+
   var funABI = self.getConstructorInterface(abi)
+  if (!funABI) {
+    return
+  }
+
   var $createInterface = $('<div class="createContract"/>')
 
   var appendFunctions = function (address, $el) {
@@ -309,13 +319,16 @@ UniversalDApp.prototype.getInstanceInterface = function (contract, address, $tar
     $instance.append($title)
 
     // Add the fallback function
-    $instance.append(self.getCallButton({
-      abi: { constant: false, inputs: [], name: '(fallback)', outputs: [], type: 'function' },
-      encode: function (args) {
-        return ''
-      },
-      address: address
-    }))
+    var fallback = self.getFallbackInterface(abi)
+    if (fallback) {
+      $instance.append(self.getCallButton({
+        abi: fallback,
+        encode: function (args) {
+          return ''
+        },
+        address: address
+      }))
+    }
 
     $.each(abi, function (i, funABI) {
       if (funABI.type !== 'function') {
@@ -364,16 +377,22 @@ UniversalDApp.prototype.getInstanceInterface = function (contract, address, $tar
   return $createInterface
 }
 
-// either return the supplied constructor or a mockup (we assume everything can be instantiated)
 UniversalDApp.prototype.getConstructorInterface = function (abi) {
-  var funABI = { 'name': '', 'inputs': [], 'type': 'constructor', 'outputs': [] }
   for (var i = 0; i < abi.length; i++) {
     if (abi[i].type === 'constructor') {
-      funABI.inputs = abi[i].inputs || []
-      break
+      return abi[i]
     }
   }
-  return funABI
+
+  return { 'type': 'constructor', 'payable': false, 'inputs': [] }
+}
+
+UniversalDApp.prototype.getFallbackInterface = function (abi) {
+  for (var i = 0; i < abi.length; i++) {
+    if (abi[i].type === 'fallback') {
+      return abi[i]
+    }
+  }
 }
 
 UniversalDApp.prototype.getCallButton = function (args) {
@@ -384,12 +403,14 @@ UniversalDApp.prototype.getCallButton = function (args) {
   var lookupOnly = (args.abi.constant && !isConstructor)
 
   var inputs = ''
-  $.each(args.abi.inputs, function (i, inp) {
-    if (inputs !== '') {
-      inputs += ', '
-    }
-    inputs += inp.type + ' ' + inp.name
-  })
+  if (args.abi.inputs) {
+    $.each(args.abi.inputs, function (i, inp) {
+      if (inputs !== '') {
+        inputs += ', '
+      }
+      inputs += inp.type + ' ' + inp.name
+    })
+  }
   var inputField = $('<input/>').attr('placeholder', inputs).attr('title', inputs)
   var $outputOverride = $('<div class="value" />')
   var outputSpan = $('<div class="output"/>')
@@ -519,7 +540,7 @@ UniversalDApp.prototype.getCallButton = function (args) {
 
     var decodeResponse = function (response) {
       // Only decode if there supposed to be fields
-      if (args.abi.outputs.length > 0) {
+      if (args.abi.outputs && args.abi.outputs.length > 0) {
         try {
           var i
 
@@ -550,7 +571,7 @@ UniversalDApp.prototype.getCallButton = function (args) {
     }
 
     var decoded
-    self.runTx({ to: args.address, data: data, useCall: args.abi.constant && !isConstructor }, function (err, txResult) {
+    self.runTx({ to: args.address, data: data, useCall: lookupOnly }, function (err, txResult) {
       if (!txResult) {
         replaceOutput($result, $('<span/>').text('callback contain no result ' + err).addClass('error'))
         return
@@ -579,12 +600,12 @@ UniversalDApp.prototype.getCallButton = function (args) {
         if (decoded) {
           $result.append(decoded)
         }
-        if (args.abi.constant) {
+        if (lookupOnly) {
           $result.append(getDebugCall(txResult))
         } else {
           $result.append(getDebugTransaction(txResult))
         }
-      } else if (args.abi.constant && !isConstructor) {
+      } else if (lookupOnly) {
         clearOutput($result)
         $result.append(getReturnOutput(result)).append(getGasUsedOutput({}))
 
@@ -600,10 +621,19 @@ UniversalDApp.prototype.getCallButton = function (args) {
     })
   }
 
+  var title
+  if (isConstructor) {
+    title = 'Create'
+  } else if (args.abi.name) {
+    title = args.abi.name
+  } else {
+    title = '(fallback)'
+  }
+
   var button = $('<button />')
     .addClass('call')
-    .attr('title', args.abi.name)
-    .text(args.bytecode ? 'Create' : args.abi.name)
+    .attr('title', title)
+    .text(title)
     .click(handleCallButtonClick)
 
   if (lookupOnly && !inputs.length) {
@@ -612,11 +642,25 @@ UniversalDApp.prototype.getCallButton = function (args) {
 
   var $contractProperty = $('<div class="contractProperty"/>')
   $contractProperty
-    .toggleClass('constant', !isConstructor && args.abi.constant)
-    .toggleClass('hasArgs', args.abi.inputs.length > 0)
-    .toggleClass('constructor', isConstructor)
     .append(button)
     .append((lookupOnly && !inputs.length) ? $outputOverride : inputField)
+
+  if (isConstructor) {
+    $contractProperty.addClass('constructor')
+  }
+
+  if (lookupOnly) {
+    $contractProperty.addClass('constant')
+  }
+
+  if (args.abi.inputs && args.abi.inputs.length > 0) {
+    $contractProperty.addClass('hasArgs')
+  }
+
+  if (args.abi.payable === true) {
+    $contractProperty.addClass('payable')
+  }
+
   return $contractProperty.append(outputSpan)
 }
 
