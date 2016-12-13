@@ -444,6 +444,7 @@ var run = function () {
   }, transactionDebugger)
 
   udapp.event.register('debugRequested', this, function (txResult) {
+    console.log("DEBUG!")
     startdebugging(txResult.transactionHash)
   })
 

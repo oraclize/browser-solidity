@@ -146,7 +146,7 @@ var generateOraclize = function (vmInstance,account) {
                   if (!last_check.success) return;
                   else clearInterval(interval)
                   if(dataProof==null && proofType!='0x00'){
-                    dataProof = new Buffer('None')
+                    dataProof = new Buffer('')
                   } else if(typeof dataProof == 'object' && proofType!='0x00'){
                     if(typeof dataProof.type != 'undefined' && typeof dataProof.value != 'undefined'){
                       dataProof = new Buffer(dataProof.value)
@@ -165,25 +165,37 @@ var generateOraclize = function (vmInstance,account) {
       if(proof==null){
         var callbackData = ethJSABI.rawEncode(["bytes32","string"],[myid,result]).toString('hex')
         vmInstance.txRunner.rawRun({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
+          var resultTx = tx
           tx = tx.result
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
+            var $button = $('<div class="debugTx"><button title="Launch Debugger" class="debug"><i class="fa fa-bug"></i></div></div>');
             result = '<span style="color:#F00;">'+error+'</span>'
+            $button.click(function(){
+              vmInstance.event.trigger("debugRequested",[resultTx])
+            })
             console.log(error)
           }
           $('#query_'+myid).append('<span class="queryResult">=</span> '+result)
+          if($button) $('#query_'+myid).append($button)
         })
       } else {
         var inputProof = (proof.length==46) ? bs58.decode(proof) : proof
         var callbackData = ethJSABI.rawEncode(["bytes32","string","bytes"],[myid,result,inputProof]).toString('hex')
         vmInstance.txRunner.rawRun({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x38BBFA50"+callbackData}, function(e, tx){
+          var resultTx = tx
           tx = tx.result
           if(e || tx.vm.exceptionError){
             var error = e || tx.vm.exceptionError
-             result = '<span style="color:#F00;">'+error+'</span>'
-             console.log(error)
+            var $button = $('<div class="debugTx"><button title="Launch Debugger" class="debug"><i class="fa fa-bug"></i></div></div>');
+            result = '<span style="color:#F00;">'+error+'</span>'
+            $button.click(function(){
+              vmInstance.event.trigger("debugRequested",[resultTx])
+            })
+            console.log(error)
           }
           $('#query_'+myid).append('<span class="queryResult">=</span> '+result+'<br><span style="color:#666;">Proof:</span> '+proof)
+          if($button) $('#query_'+myid).append($button)
         })
           console.log('proof: '+proof)
       }
