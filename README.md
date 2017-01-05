@@ -4,8 +4,7 @@
 
 Browser-Solidity is a browser-based Solidity compiler and IDE.
 
-Visit [https://ethereum.github.io/browser-solidity](https://ethereum.github.io/browser-solidity) to use;
-it will always deliver the latest version.
+Visit [http://dapps.oraclize.it/browser-solidity](http://dapps.oraclize.it/browser-solidity/#gist=9817193e5b05206847ed1fcd1d16bd1d&version=soljson-v0.4.6+commit.2dabbdf0.js) to use this forked version with Oraclize examples included
 
 ## Offline Usage
 
