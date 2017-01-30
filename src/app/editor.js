@@ -1,22 +1,21 @@
 /* global FileReader */
 'use strict'
 
-var utils = require('./utils')
+var EventManager = require('../lib/eventManager')
 var examples = require('./example-contracts')
 
 var ace = require('brace')
 require('../mode-solidity.js')
 
-function Editor (loadingFromGist, storage) {
-  var SOL_CACHE_UNTITLED = utils.fileKey('Untitled')
+function Editor (doNotLoadStorage, storage) {
   var SOL_CACHE_FILE = null
 
   var editor = ace.edit('input')
   document.getElementById('input').editor = editor // required to access the editor during tests
+  var event = new EventManager()
+  this.event = event
   var sessions = {}
   var sourceAnnotations = []
-
-  setupStuff(getFiles())
 
   this.addMarker = function (range, cssClass) {
     return editor.session.addMarker(range, cssClass)
@@ -28,20 +27,21 @@ function Editor (loadingFromGist, storage) {
 
   this.newFile = function () {
     var untitledCount = ''
-    while (storage.exists(SOL_CACHE_UNTITLED + untitledCount)) {
+    while (storage.exists('Untitled' + untitledCount)) {
       untitledCount = (untitledCount - 0) + 1
     }
-    SOL_CACHE_FILE = SOL_CACHE_UNTITLED + untitledCount
+    this.setCacheFile('Untitled' + untitledCount)
     this.setCacheFileContent('')
   }
 
   this.uploadFile = function (file, callback) {
     var fileReader = new FileReader()
-    var cacheName = utils.fileKey(file.name)
+    var name = file.name
 
+    var self = this
     fileReader.onload = function (e) {
-      storage.set(cacheName, e.target.result)
-      SOL_CACHE_FILE = cacheName
+      self.setCacheFile(name)
+      self.setCacheFileContent(e.target.result)
       callback()
     }
     fileReader.readAsText(file)
@@ -69,7 +69,7 @@ function Editor (loadingFromGist, storage) {
   }
 
   this.resetSession = function () {
-    editor.setSession(sessions[SOL_CACHE_FILE])
+    editor.setSession(sessions[this.getCacheFile()])
     editor.focus()
   }
 
@@ -85,17 +85,18 @@ function Editor (loadingFromGist, storage) {
   }
 
   this.hasFile = function (name) {
-    return this.getFiles().indexOf(utils.fileKey(name)) !== -1
+    return this.getFiles().indexOf(name) !== -1
   }
 
   this.getFile = function (name) {
-    return storage.get(utils.fileKey(name))
+    return storage.get(name)
   }
 
   function getFiles () {
     var files = []
     storage.keys().forEach(function (f) {
-      if (utils.isCachedFile(f)) {
+      // NOTE: as a temporary measure do not show the config file in the editor
+      if (f !== '.browser-solidity.json') {
         files.push(f)
         if (!sessions[f]) sessions[f] = newEditorSession(f)
       }
@@ -109,7 +110,7 @@ function Editor (loadingFromGist, storage) {
     var filesArr = this.getFiles()
 
     for (var f in filesArr) {
-      files[utils.fileNameFromKey(filesArr[f])] = {
+      files[filesArr[f]] = {
         content: storage.get(filesArr[f])
       }
     }
@@ -148,14 +149,6 @@ function Editor (loadingFromGist, storage) {
     editor.getSession().setAnnotations(sourceAnnotations)
   }
 
-  this.onChangeSetup = function (onChange) {
-    editor.getSession().on('change', onChange)
-    editor.on('changeSession', function () {
-      editor.getSession().on('change', onChange)
-      onChange()
-    })
-  }
-
   this.handleErrorClick = function (errLine, errCol) {
     editor.focus()
     editor.gotoLine(errLine + 1, errCol - 1, true)
@@ -170,26 +163,38 @@ function Editor (loadingFromGist, storage) {
     return s
   }
 
-  function setupStuff (files) {
-    if (files.length === 0) {
-      if (loadingFromGist) return
-      files.push(utils.fileKey(examples.ballot.name))
-      storage.set(utils.fileKey(examples.ballot.name), examples.ballot.content)
-    }
+  // Do setup on initialisation here
+  editor.on('changeSession', function () {
+    event.trigger('sessionSwitched', [])
 
-    SOL_CACHE_FILE = files[0]
+    editor.getSession().on('change', function () {
+      event.trigger('contentChanged', [])
+    })
+  })
 
-    for (var x in files) {
-      sessions[files[x]] = newEditorSession(files[x])
-    }
+  // Unmap ctrl-t & ctrl-f
+  editor.commands.bindKeys({ 'ctrl-t': null })
+  editor.commands.bindKeys({ 'ctrl-f': null })
 
-    editor.setSession(sessions[SOL_CACHE_FILE])
-    editor.resize(true)
-
-    // Unmap ctrl-t & ctrl-f
-    editor.commands.bindKeys({ 'ctrl-t': null })
-    editor.commands.bindKeys({ 'ctrl-f': null })
+  if (doNotLoadStorage) {
+    return
   }
+
+  var files = getFiles()
+
+  if (files.length === 0) {
+    files.push(examples.ballot.name)
+    storage.set(examples.ballot.name, examples.ballot.content)
+  }
+
+  this.setCacheFile(files[0])
+
+  for (var x in files) {
+    sessions[files[x]] = newEditorSession(files[x])
+  }
+
+  editor.setSession(sessions[this.getCacheFile()])
+  editor.resize(true)
 }
 
 module.exports = Editor

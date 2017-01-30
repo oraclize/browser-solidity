@@ -1,7 +1,6 @@
 'use strict'
 
 var remix = require('ethereum-remix')
-var utils = require('./utils')
 var ace = require('brace')
 var Range = ace.acequire('ace/range').Range
 
@@ -27,16 +26,15 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
     self.removeCurrentMarker()
   })
 
-  this.editor.onChangeSetup(function () {
-    if (arguments.length > 0) { // if arguments.length === 0 this is a session change, we don't want to stop debugging in that case
-      self.debugger.unLoad()
-    }
+  // unload if a file has changed (but not if tabs were switched)
+  editor.event.register('contentChanged', function () {
+    self.debugger.unLoad()
   })
 
   // register selected code item, highlight the corresponding source location
   this.debugger.codeManager.event.register('changed', this, function (code, address, index) {
     if (self.compiler.lastCompilationResult) {
-      this.debugger.sourceLocationTracker.getSourceLocation(address, index, self.compiler.lastCompilationResult.data.contracts, function (error, rawLocation) {
+      this.debugger.callTree.sourceLocationTracker.getSourceLocationFromInstructionIndex(address, index, self.compiler.lastCompilationResult.data.contracts, function (error, rawLocation) {
         if (!error) {
           var lineColumnPos = self.offsetToLineColumnConverter.offsetToLineColumn(rawLocation, rawLocation.file, self.editor, self.compiler.lastCompilationResult.data)
           self.highlight(lineColumnPos, rawLocation)
@@ -70,7 +68,7 @@ Debugger.prototype.debug = function (txHash) {
  * @param {Object} rawLocation - raw position of the source code to hightlight {start, length, file, jump}
  */
 Debugger.prototype.highlight = function (lineColumnPos, rawLocation) {
-  var name = utils.fileNameFromKey(this.editor.getCacheFile()) // current opened tab
+  var name = this.editor.getCacheFile() // current opened tab
   var source = this.compiler.lastCompilationResult.data.sourceList[rawLocation.file] // auto switch to that tab
   this.removeCurrentMarker()
   if (name !== source) {

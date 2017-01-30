@@ -10,16 +10,17 @@
     "browser-test-remote-ie": "nightwatch --config nightwatch.js --env ie",
     "browser-test-remote-safari": "nightwatch --config nightwatch.js --env safari",
     "browser-test-remote-parallel": "nightwatch --config nightwatch.js --env safari,ie,default,chrome",
-    "build": "mkdir -p build; browserify src/index.js -g yo-yoify -o build/app.js; babel build/app.js --out-file build/app.js",
+    "build": "mkdir build; browserify src/index.js -g yo-yoify -o build/app.js -t [ babelify ]; babel --plugins=transform-es2015-template-literals build/app.js --out-file build/app.js",
     "csslint": "csslint --ignore=order-alphabetical --errors='errors,duplicate-properties,empty-rules' --exclude-list='assets/css/font-awesome.min.css' assets/css/",
     "downloadsolc": "rm soljson.js; wget https://ethereum.github.io/solc-bin/soljson.js",
     "lint": "standard",
     "serve": "http-server .",
-    "test": "node test/index.js"
+    "test": "standard; babel src --out-dir babelify-src; node test/index.js"
   },
   "devDependencies": {
     "async": "^2.1.2",
     "babel-cli": "^6.16.0",
+    "babel-eslint": "^7.1.1",
     "babel-plugin-check-es2015-constants": "^6.8.0",
     "babel-plugin-transform-es2015-arrow-functions": "^6.8.0",
     "babel-plugin-transform-es2015-block-scoped-functions": "^6.8.0",
@@ -39,7 +40,7 @@
     "babel-plugin-transform-es2015-template-literals": "^6.8.0",
     "babel-plugin-transform-es2015-unicode-regex": "^6.11.0",
     "babel-plugin-transform-regenerator": "^6.16.1",
-    "babel-polyfill": "^6.20.0",
+    "babelify": "^7.3.0",
     "brace": "^0.8.0",
     "browserify": "^13.0.0",
     "bs58": "^3.0.0",
@@ -52,6 +53,7 @@
     "ethereumjs-tx": "^1.1.1",
     "ethereumjs-util": "^4.4.0",
     "ethereumjs-vm": "^2.0.1",
+    "fast-async": "^6.1.2",
     "http-server": "0.9.0",
     "jquery": "^2.2.0",
     "js-base64": "^2.1.9",
@@ -60,7 +62,7 @@
     "solc": "https://github.com/ethereum/solc-js",
     "standard": "^8.5.0",
     "tape": "^4.5.1",
-    "web3": "https://github.com/ethereum/web3.js#35bcace7173fda742ddb1bba84c8a70f0fa849e0",
+    "web3": "^0.18.0",
     "webworkify": "^1.2.1",
     "yo-yo": "^1.2.2",
     "yo-yoify": "^3.3.0"
@@ -85,6 +87,7 @@
       "build/",
       "src/mode-solidity.js",
       "soljson.js"
-    ]
+    ],
+    "parser": "babel-eslint"
   }
 }

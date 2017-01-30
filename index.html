@@ -40,7 +40,7 @@
 
 		<div id="editor">
 			<span class="newFile" title="New File"><i class="fa fa-file-code-o"></i></span>
-			<span class="uploadFile" title="Upload"><label class="fa fa-upload"><input type="file" class="inputFile" multiple /></label></span>
+			<span class="uploadFile" title="Open local file"><label class="fa fa-folder-open-o"><input type="file" class="inputFile" multiple /></label></span>
 			<div class="files-wrapper">
 				<div class="scroller scroller-left"><i class="fa fa-chevron-left "></i></div>
 				<div class="scroller scroller-right"><i class="fa fa-chevron-right "></i></div>
@@ -68,7 +68,7 @@
 						<li class="staticanalysisView" title="Static Analysis"><i class="fa fa-search"></i></li>
 						<li id="helpButton"><a href="https://solidity.readthedocs.org" target="_blank" title="Open Documentation" class="fa fa-question"></a></li>
 					</ul>
-					<img id="solIcon" title="Solidity realtime compiler and runtime" src="assets/img/sol.svg" alt="Solidity realtime compiler and runtime">
+					<img id="solIcon" title="Solidity realtime compiler and runtime" src="assets/img/remix_logo_512x512.svg" alt="Solidity realtime compiler and runtime">
 				</div>
 				<div id="optionViews" class="settingsView">
 					<div id="txView">
@@ -76,7 +76,7 @@
 							<label for="txorigin"><select name="txorigin" id="txorigin"></select> Transaction origin</label>
 						</div>
 						<div class="crow">
-							<label for="gasLimit"><input type="number" id="gasLimit" value="3000000"> Gas limit</label>
+							<label for="gasLimit"><input type="number" id="gasLimit" value="3000000"> Transaction gas limit</label>
 						</div>
 						<div class="crow hide">
 							<label for="gasPrice"><input type="number" id="gasPrice" value="0"> Gas Price</label>

@@ -12,9 +12,9 @@ deploy:
     branch: master
 env:
   global:
-    - ENCRYPTION_LABEL="b5c2730599da"
+    - ENCRYPTION_LABEL1="b5c2730599da"
+    - ENCRYPTION_LABEL2="85f76a180658"
     - COMMIT_AUTHOR_EMAIL="chris@ethereum.org"
     - COMMIT_AUTHOR="Travis CI"
-    - PUSH_REPO="git@github.com:ethereum/browser-solidity.git"
     - FILES_TO_PACKAGE="assets background.js build icon.png index.html manifest.json README.md soljson.js"
 cache: false

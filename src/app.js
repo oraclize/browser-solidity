@@ -1,16 +1,16 @@
-/* global alert, confirm, prompt, Option, Worker */
+/* global alert, confirm, prompt, Option, Worker, chrome */
 'use strict'
 
 var $ = require('jquery')
 var base64 = require('js-base64').Base64
 
-var utils = require('./app/utils')
 var QueryParams = require('./app/query-params')
 var queryParams = new QueryParams()
 var GistHandler = require('./app/gist-handler')
 var gistHandler = new GistHandler()
 
 var Storage = require('./app/storage')
+var Config = require('./app/config')
 var Editor = require('./app/editor')
 var Renderer = require('./app/renderer')
 var Compiler = require('./app/compiler')
@@ -41,22 +41,25 @@ window.addEventListener('message', function (ev) {
 var run = function () {
   var self = this
   this.event = new EventManager()
-  var storage = new Storage(updateFiles)
+  var storage = new Storage()
+  var config = new Config(storage)
 
+  // Add files received from remote instance (i.e. another browser-solidity)
   function loadFiles (files) {
     for (var f in files) {
-      var key = utils.fileKey(f)
-      var content = files[f].content
-      storage.loadFile(key, content)
+      storage.loadFile(f, files[f].content)
     }
-    editor.setCacheFile(utils.fileKey(Object.keys(files)[0]))
+    // Set the first file as current tab
+    editor.setCacheFile(Object.keys(files)[0])
     updateFiles()
   }
 
+  // Replace early callback with instant response
   loadFilesCallback = function (files) {
     loadFiles(files)
   }
 
+  // Run if we did receive an event from remote instance while starting up
   if (filesToLoad !== null) {
     loadFiles(filesToLoad)
   }
@@ -86,10 +89,47 @@ var run = function () {
     })
   })
 
-  // ----------------- storage sync --------------------
+  // ----------------- Chrome cloud storage sync --------------------
 
-  window.syncStorage = storage.sync
-  storage.sync()
+  function chromeCloudSync () {
+    if (typeof chrome === 'undefined' || !chrome || !chrome.storage || !chrome.storage.sync) {
+      return
+    }
+
+    var obj = {}
+    var done = false
+    var count = 0
+
+    function check (key) {
+      chrome.storage.sync.get(key, function (resp) {
+        console.log('comparing to cloud', key, resp)
+        if (typeof resp[key] !== 'undefined' && obj[key] !== resp[key] && confirm('Overwrite "' + key + '"? Click Ok to overwrite local file with file from cloud. Cancel will push your local file to the cloud.')) {
+          console.log('Overwriting', key)
+          storage.set(key, resp[key])
+          updateFiles()
+        } else {
+          console.log('add to obj', obj, key)
+          obj[key] = storage.get(key)
+        }
+        done++
+        if (done >= count) {
+          chrome.storage.sync.set(obj, function () {
+            console.log('updated cloud files with: ', obj, this, arguments)
+          })
+        }
+      })
+    }
+
+    for (var y in storage.keys()) {
+      console.log('checking', y)
+      obj[y] = storage.get(y)
+      count++
+      check(y)
+    }
+  }
+
+  window.syncStorage = chromeCloudSync
+  chromeCloudSync()
 
   // ----------------- editor ----------------------
 
@@ -100,6 +140,7 @@ var run = function () {
     var $el = $(this)
     selectTab($el)
   })
+
   var selectTab = function (el) {
     var match = /[a-z]+View/.exec(el.get(0).className)
     if (!match) return
@@ -171,7 +212,7 @@ var run = function () {
     var fileList = $('input.inputFile')[0].files
     for (var i = 0; i < fileList.length; i++) {
       var name = fileList[i].name
-      if (!storage.exists(utils.fileKey(name)) || confirm('The file ' + name + ' already exists! Would you like to overwrite it?')) {
+      if (!editor.hasFile(name) || confirm('The file ' + name + ' already exists! Would you like to overwrite it?')) {
         editor.uploadFile(fileList[i], updateFiles)
       }
     }
@@ -181,8 +222,14 @@ var run = function () {
     })
   })
 
-  $filesEl.on('click', '.file:not(.active)', showFileHandler)
+  // Switch tab
+  $filesEl.on('click', '.file:not(.active)', function (ev) {
+    ev.preventDefault()
+    switchToFile($(this).find('.name').text())
+    return false
+  })
 
+  // Edit name of current tab
   $filesEl.on('click', '.file.active', function (ev) {
     var $fileTabEl = $(this)
     var originalName = $fileTabEl.find('.name').text()
@@ -203,12 +250,12 @@ var run = function () {
       $fileNameInputEl.off('keyup')
 
       if (newName !== originalName && confirm(
-          storage.exists(utils.fileKey(newName))
+          editor.hasFile(newName)
             ? 'Are you sure you want to overwrite: ' + newName + ' with ' + originalName + '?'
             : 'Are you sure you want to rename: ' + originalName + ' to ' + newName + '?')) {
-        storage.rename(utils.fileKey(originalName), utils.fileKey(newName))
-        editor.renameSession(utils.fileKey(originalName), utils.fileKey(newName))
-        editor.setCacheFile(utils.fileKey(newName))
+        storage.rename(originalName, newName)
+        editor.renameSession(originalName, newName)
+        editor.setCacheFile(newName)
       }
 
       updateFiles()
@@ -218,35 +265,28 @@ var run = function () {
     return false
   })
 
+  // Remove current tab
   $filesEl.on('click', '.file .remove', function (ev) {
     ev.preventDefault()
     var name = $(this).parent().find('.name').text()
 
     if (confirm('Are you sure you want to remove: ' + name + ' from local storage?')) {
-      storage.remove(utils.fileKey(name))
-      editor.removeSession(utils.fileKey(name))
-      editor.setNextFile(utils.fileKey(name))
+      storage.remove(name)
+      editor.removeSession(name)
+      editor.setNextFile(name)
       updateFiles()
     }
     return false
   })
 
-  function swicthToFile (file) {
-    editor.setCacheFile(utils.fileKey(file))
+  editor.event.register('sessionSwitched', updateFiles)
+
+  function switchToFile (file) {
+    editor.setCacheFile(file)
     updateFiles()
   }
 
-  function showFileHandler (ev) {
-    ev.preventDefault()
-    swicthToFile($(this).find('.name').text())
-    return false
-  }
-
-  function activeFileTab () {
-    var name = utils.fileNameFromKey(editor.getCacheFile())
-    return $('#files .file').filter(function () { return $(this).find('.name').text() === name })
-  }
-
+  // Synchronise tab list with file names known to the editor
   function updateFiles () {
     var $filesEl = $('#files')
     var files = editor.getFiles()
@@ -255,22 +295,19 @@ var run = function () {
     $('#output').empty()
 
     for (var f in files) {
-      $filesEl.append(fileTabTemplate(files[f]))
+      var name = files[f]
+      $filesEl.append($('<li class="file"><span class="name">' + name + '</span><span class="remove"><i class="fa fa-close"></i></span></li>'))
     }
 
     if (editor.cacheFileIsPresent()) {
-      var active = activeFileTab()
+      var currentFileName = editor.getCacheFile()
+      var active = $('#files .file').filter(function () { return $(this).find('.name').text() === currentFileName })
       active.addClass('active')
       editor.resetSession()
     }
     $('#input').toggle(editor.cacheFileIsPresent())
     $('#output').toggle(editor.cacheFileIsPresent())
     reAdjust()
-  }
-
-  function fileTabTemplate (key) {
-    var name = utils.fileNameFromKey(key)
-    return $('<li class="file"><span class="name">' + name + '</span><span class="remove"><i class="fa fa-close"></i></span></li>')
   }
 
   var $filesWrapper = $('.files-wrapper')
@@ -337,6 +374,8 @@ var run = function () {
 
   // ----------------- resizeable ui ---------------
 
+  var EDITOR_WINDOW_SIZE = 'editorWindowSize'
+
   var dragging = false
   $('#dragbar').mousedown(function (e) {
     e.preventDefault()
@@ -363,7 +402,7 @@ var run = function () {
   }
 
   function getEditorSize () {
-    storage.setEditorSize($('#righthand-panel').width())
+    return $('#righthand-panel').width()
   }
 
   $(document).mouseup(function (e) {
@@ -373,22 +412,23 @@ var run = function () {
       $(document).unbind('mousemove')
       dragging = false
       setEditorSize(delta)
-      storage.setEditorSize(delta)
+      config.set(EDITOR_WINDOW_SIZE, delta)
       reAdjust()
     }
   })
 
-  // set cached defaults
-  var cachedSize = storage.getEditorSize()
-  if (cachedSize) setEditorSize(cachedSize)
-  else getEditorSize()
+  if (config.exists(EDITOR_WINDOW_SIZE)) {
+    setEditorSize(config.get(EDITOR_WINDOW_SIZE))
+  } else {
+    config.set(EDITOR_WINDOW_SIZE, getEditorSize())
+  }
 
   // ----------------- toggle right hand panel -----------------
 
   var hidingRHP = false
   $('.toggleRHP').click(function () {
     hidingRHP = !hidingRHP
-    setEditorSize(hidingRHP ? 0 : storage.getEditorSize())
+    setEditorSize(hidingRHP ? 0 : config.get(EDITOR_WINDOW_SIZE))
     $('.toggleRHP i').toggleClass('fa-angle-double-right', !hidingRHP)
     $('.toggleRHP i').toggleClass('fa-angle-double-left', hidingRHP)
   })
@@ -426,17 +466,44 @@ var run = function () {
         cb(err || 'Unknown transport error')
       })
   }
+
+  // FIXME: at some point we should invalidate the cache
+  var cachedRemoteFiles = {}
+
+  function handleImportCall (url, cb) {
+    var githubMatch
+    if (editor.hasFile(url)) {
+      cb(null, editor.getFile(url))
+    } else if (url in cachedRemoteFiles) {
+      cb(null, cachedRemoteFiles[url])
+    } else if ((githubMatch = /^(https?:\/\/)?(www.)?github.com\/([^/]*\/[^/]*)\/(.*)/.exec(url))) {
+      handleGithubCall(githubMatch[3], githubMatch[4], function (err, content) {
+        if (err) {
+          cb('Unable to import "' + url + '": ' + err)
+          return
+        }
+
+        cachedRemoteFiles[url] = content
+        cb(null, content)
+      })
+    } else if (/^[^:]*:\/\//.exec(url)) {
+      cb('Unable to import "' + url + '": Unsupported URL')
+    } else {
+      cb('Unable to import "' + url + '": File not found')
+    }
+  }
+
   var executionContext = new ExecutionContext()
-  var compiler = new Compiler(editor, handleGithubCall)
+  var compiler = new Compiler(handleImportCall)
   var formalVerification = new FormalVerification($('#verificationView'), compiler.event)
 
   var offsetToLineColumnConverter = new OffsetToLineColumnConverter(compiler.event)
 
-  var transactionDebugger = new Debugger('#debugger', editor, compiler, executionContext.event, swicthToFile, offsetToLineColumnConverter)
+  var transactionDebugger = new Debugger('#debugger', editor, compiler, executionContext.event, switchToFile, offsetToLineColumnConverter)
   transactionDebugger.addProvider('vm', executionContext.vm())
-  transactionDebugger.switchProvider('vm')
   transactionDebugger.addProvider('injected', executionContext.web3())
   transactionDebugger.addProvider('web3', executionContext.web3())
+  transactionDebugger.switchProvider(executionContext.getProvider())
 
   var udapp = new UniversalDApp(executionContext, {
     removable: false,
@@ -454,10 +521,24 @@ var run = function () {
   $('#staticanalysisView').append(staticanalysis.render())
 
   var autoCompile = document.querySelector('#autoCompile').checked
+  if (config.exists('autoCompile')) {
+    autoCompile = config.get('autoCompile')
+    $('#autoCompile').checked = autoCompile
+  }
 
   document.querySelector('#autoCompile').addEventListener('change', function () {
     autoCompile = document.querySelector('#autoCompile').checked
+    config.set('autoCompile', autoCompile)
   })
+
+  function runCompiler () {
+    var files = {}
+    var target = editor.getCacheFile()
+
+    files[target] = editor.getValue()
+
+    compiler.compile(files, target)
+  }
 
   var previousInput = ''
   var compileTimeout = null
@@ -494,17 +575,19 @@ var run = function () {
     if (compileTimeout) {
       window.clearTimeout(compileTimeout)
     }
-    compileTimeout = window.setTimeout(compiler.compile, 300)
+    compileTimeout = window.setTimeout(runCompiler, 300)
   }
 
-  editor.onChangeSetup(editorOnChange)
+  editor.event.register('contentChanged', editorOnChange)
+  // in order to save the file when switching
+  editor.event.register('sessionSwitched', editorOnChange)
 
   $('#compile').click(function () {
-    compiler.compile()
+    runCompiler()
   })
 
   executionContext.event.register('contextChanged', this, function (context) {
-    compiler.compile()
+    runCompiler()
   })
 
   udapp.event.register('vmReady', this, function (context) {
@@ -519,7 +602,7 @@ var run = function () {
   },1700)
 
   executionContext.event.register('web3EndpointChanged', this, function (context) {
-    compiler.compile()
+    runCompiler()
   })
 
   compiler.event.register('loadingCompiler', this, function (url, usingWorker) {
@@ -529,7 +612,7 @@ var run = function () {
   compiler.event.register('compilerLoaded', this, function (version) {
     previousInput = ''
     setVersionText(version)
-    compiler.compile()
+    runCompiler()
 
     if (queryParams.get().endpointurl) {
       executionContext.setEndPointUrl(queryParams.get().endpointurl)
@@ -591,7 +674,7 @@ var run = function () {
     var optimize = document.querySelector('#optimize').checked
     queryParams.update({ optimize: optimize })
     compiler.setOptimize(optimize)
-    compiler.compile()
+    runCompiler()
   })
 
   // ----------------- version selector-------------
@@ -631,8 +714,6 @@ var run = function () {
 
     loadVersion('builtin')
   })
-
-  storage.sync()
 }
 
 module.exports = {
