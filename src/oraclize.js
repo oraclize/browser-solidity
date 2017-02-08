@@ -232,8 +232,11 @@ function processLog(vmInstance, log, connectorAddr, account) {
             dataProof = Buffer.from('')
           } else if(typeof dataProof == 'object' && proofType!='0x00'){
             if(typeof dataProof.type != 'undefined' && typeof dataProof.value != 'undefined'){
-              dataProof = Buffer.from(dataProof.value)
+              dataProof = Buffer.from(dataProof.value, 'hex')
             }
+          }
+          if(typeof dataRes == 'object' && typeof dataRes.value != 'undefined') {
+            dataRes = Buffer.from(dataRes.value, 'hex')
           }
           oraclizeCallback(vmInstance, account, gasLimit, myIdInitial, dataRes, dataProof, cAddr)
         })
