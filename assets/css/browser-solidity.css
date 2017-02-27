@@ -256,6 +256,10 @@ body {
     cursor:pointer;
 }
 
+.cPointer {
+    cursor: pointer;
+}
+
 #queryNotification {
     position: absolute;
     margin-left: 10px;

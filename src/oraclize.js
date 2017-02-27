@@ -213,6 +213,8 @@ function processLog(vmInstance, log, connectorAddr, account) {
       console.log("Query : "+data)
       data = JSON.parse(data)
       myid = data.result.id
+      $('#query_' + myIdInitial).attr('onclick', 'window.open("https://api.oraclize.it/v1/query/' + myid + '/status", "_blank");')
+      $('#query_' + myIdInitial).addClass('cPointer')
       console.log("New query created, id: "+myid)
       console.log("Checking query status every 5 seconds..")
       updateQueryNotification(1);
