@@ -2,7 +2,7 @@ var $ = require('jquery')
 var ethJSABI = require('ethereumjs-abi')
 var request = require('request')
 var bs58 = require('bs58')
-var cbor = require('cbor') //requires babel-polyfill
+var cbor = require('borc') //requires babel-polyfill
 
 var generateOraclize = function (vmInstance,account) {
   vmInstance.executionContext.event.register('contextChanged', this, function (context) {
@@ -103,6 +103,7 @@ function runLog(vmInstance, connectorAddr, account){
 }
 
 function oraclizeCallback(vmInstance, mainAccount, gasLimit, myid, result, proof, contractAddr){
+  if (result === '' || result === null) result = Buffer.from('')
   if(proof==null){
     var callbackData = ethJSABI.rawEncode(["bytes32","string"],[myid,result]).toString('hex')
     vmInstance.txRunner.rawRun({"from":mainAccount,"to":contractAddr,"gasLimit":gasLimit,"value":0,"data":"0x27dc297e"+callbackData}, function(e, tx){
@@ -184,7 +185,13 @@ function processLog(vmInstance, log, connectorAddr, account) {
     if(typeof(decoded['arg']) != 'undefined'){
       var formula = decoded['arg']
     } else if(typeof(decoded['args']) != 'undefined') {
-      var formula = cbor.decodeAllSync(Buffer.from(decoded['args'].substr(2), 'hex'))[0]
+      var formula = []
+      var cborDecoded = cbor.decodeFirst(Buffer.from(decoded['args'].substr(2), 'hex'))
+      for (var i = 0; i < cborDecoded.length; i++) {
+        var cborDecStand = cborDecoded[i]
+        if (Buffer.isBuffer(cborDecoded[i])) cborDecStand = {"type": "hex", "value": cborDecoded[i].toString('hex')}
+        formula.push(cborDecStand)
+      }
     } else {
       var arg2formula = decoded['arg2']
       var formula = [decoded['arg1'],arg2formula]
@@ -195,7 +202,8 @@ function processLog(vmInstance, log, connectorAddr, account) {
     var dateQuery = new Date()
     dateQuery = dateQuery.getHours()+":"+dateQuery.getMinutes()+":"+dateQuery.getSeconds()
     var queryInfoTitle = "Time: "+dateQuery+"\n"+"myid: "+myIdInitial
-    var queryHtml = "<div id='query_"+myIdInitial+"' title='"+queryInfoTitle+"' style='margin-bottom:4px;'><span><span class='datasource'>"+ds+"</span> "+formula+"</span><br></div>"
+    var formulaRender = (formula instanceof Array && typeof formula[0] === 'object') ? JSON.stringify(formula) : formula
+    var queryHtml = "<div id='query_"+myIdInitial+"' title='"+queryInfoTitle+"' style='margin-bottom:4px;'><span><span class='datasource'>"+ds+"</span> "+formulaRender+"</span><br></div>"
     $('#queryHistoryContainer').append(queryHtml)
 
     var time = parseInt(decoded['timestamp'])
@@ -213,7 +221,7 @@ function processLog(vmInstance, log, connectorAddr, account) {
       console.log("Query : "+data)
       data = JSON.parse(data)
       myid = data.result.id
-      $('#query_' + myIdInitial).attr('onclick', 'window.open("https://api.oraclize.it/v1/query/' + myid + '/status", "_blank");')
+      $('#query_' + myIdInitial).attr('onclick', 'window.open("https://api.oraclize.it/v1/query/' + myid + '/status?_pretty=1", "_blank");')
       $('#query_' + myIdInitial).addClass('cPointer')
       console.log("New query created, id: "+myid)
       console.log("Checking query status every 5 seconds..")
@@ -237,7 +245,7 @@ function processLog(vmInstance, log, connectorAddr, account) {
               dataProof = Buffer.from(dataProof.value, 'hex')
             }
           }
-          if(typeof dataRes == 'object' && typeof dataRes.value != 'undefined') {
+          if(dataRes !== null && typeof dataRes === 'object' && typeof dataRes.value !== 'undefined') {
             dataRes = Buffer.from(dataRes.value, 'hex')
           }
           oraclizeCallback(vmInstance, account, gasLimit, myIdInitial, dataRes, dataProof, cAddr)
